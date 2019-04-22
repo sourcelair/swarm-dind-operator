@@ -28,7 +28,7 @@ services:
     - --args=--experimental
     - --binds=/mnt/dind:/var/lib/docker
     volumes:
-	  - /var/run/docker.sock:/var/run/docker.sock
+    - /var/run/docker.sock:/var/run/docker.sock
 ```
 
 you can deploy the operator to Docker Swarm with
