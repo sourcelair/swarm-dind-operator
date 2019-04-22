@@ -4,6 +4,9 @@ COPY . /usr/src/app
 
 WORKDIR /usr/src/app
 
+COPY go.sum go.mod /usr/src/app/
+RUN go get
+
 RUN CGO_ENABLED=0 go build -a -installsuffix nocgo -o swarm-operator-dind
 
 
