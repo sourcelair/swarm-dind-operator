@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	docker "github.com/fsouza/go-dockerclient"
@@ -31,11 +33,26 @@ func runOperator() int {
 	pflag.StringArrayVar(&containerBinds, "binds", []string{}, "the directories to bind in the container")
 	pflag.Parse()
 
+	filteredBinds := make([]string, 0, len(containerBinds))
+	for _, bind := range containerBinds {
+		if bind != "" {
+			filteredBinds = append(filteredBinds, bind)
+		}
+	}
+
 	args, err := shellquote.Split(containerArgs)
 	if err != nil {
 		fmt.Println(errors.Wrap(err, "invalid arguments given"))
 		return 42
 	}
+
+	data, err := ioutil.ReadFile("/proc/self/cpuset")
+	if err != nil {
+		fmt.Println(errors.Wrap(err, "cannot read cgroup file"))
+		return 42
+	}
+	parts := strings.Split(string(data), "/")
+	selfID := strings.TrimSpace(parts[len(parts)-1])
 
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
@@ -78,9 +95,8 @@ func runOperator() int {
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
 		Name: containerName,
 		Config: &docker.Config{
-			Cmd:      args,
-			Hostname: containerName,
-			Image:    imageName,
+			Cmd:   args,
+			Image: imageName,
 			Labels: map[string]string{
 				"com.sourcelair.swarm-dind-operator":      "true",
 				"com.sourcelair.swarm-dind-operator.name": containerName,
@@ -88,8 +104,10 @@ func runOperator() int {
 			StopTimeout: containerStopTimeout,
 		},
 		HostConfig: &docker.HostConfig{
-			Privileged: true,
-			Binds:      containerBinds,
+			Privileged:  true,
+			Binds:       filteredBinds,
+			NetworkMode: fmt.Sprintf("container:%s", selfID),
+			PidMode:     fmt.Sprintf("container:%s", selfID),
 		},
 	})
 	if err != nil {
