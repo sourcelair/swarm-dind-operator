@@ -33,7 +33,7 @@ func runOperator() int {
 	pflag.StringArrayVar(&containerBinds, "binds", []string{}, "the directories to bind in the container")
 	pflag.Parse()
 
-	filteredBinds := make([]string, len(containerBinds))
+	filteredBinds := make([]string, 0, len(containerBinds))
 	for _, bind := range containerBinds {
 		if bind != "" {
 			filteredBinds = append(filteredBinds, bind)
