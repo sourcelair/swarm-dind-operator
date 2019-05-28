@@ -1,0 +1,20 @@
+version: '3.7'
+
+services:
+  dind:
+    image: sourcelair/swarm-dind-operator:${TAG:-local}
+    command:
+    - /usr/bin/swarm-operator-dind
+    - --image=${DIND_IMAGE:-docker:18.09-dind}
+    - --args=${DIND_ARGS}
+    - --stop-timeout=${DIND_STOP_TIMEOUT:-10}
+    - --binds=${DIND_BINDS}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    init: true
+
+networks:
+  default:
+    name: ${NETWORK:-dind}
+    attachable: true
+    external: true
