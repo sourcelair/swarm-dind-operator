@@ -33,6 +33,13 @@ func runOperator() int {
 	pflag.StringArrayVar(&containerBinds, "binds", []string{}, "the directories to bind in the container")
 	pflag.Parse()
 
+	filteredBinds := make([]string, len(containerBinds))
+	for _, bind := range containerBinds {
+		if bind != "" {
+			filteredBinds = append(filteredBinds, bind)
+		}
+	}
+
 	args, err := shellquote.Split(containerArgs)
 	if err != nil {
 		fmt.Println(errors.Wrap(err, "invalid arguments given"))
@@ -98,7 +105,7 @@ func runOperator() int {
 		},
 		HostConfig: &docker.HostConfig{
 			Privileged:  true,
-			Binds:       containerBinds,
+			Binds:       filteredBinds,
 			NetworkMode: fmt.Sprintf("container:%s", selfID),
 			PidMode:     fmt.Sprintf("container:%s", selfID),
 		},
